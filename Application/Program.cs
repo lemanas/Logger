@@ -12,7 +12,7 @@ namespace LogUsers
 
             for (int i = 0; i < 15; i++)
             {
-                logger.Write("Number with Flush: " + i + "\n");
+                logger.Write("Number with Flush: " + i);
                 Thread.Sleep(50);
             }
 
@@ -22,12 +22,13 @@ namespace LogUsers
 
             for (int i = 50; i > 0; i--)
             {
-                logger2.Write("Number with No flush: " + i + "\n");
+                logger2.Write("Number with No flush: " + i);
                 Thread.Sleep(20);
             }
 
             //logger2.StopWithoutFlush();
 
+            Console.WriteLine("Main program done");
             Console.ReadLine();
         }
     }
