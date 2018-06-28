@@ -11,16 +11,16 @@ namespace LogUsers
 
             for (int i = 0; i < 15; i++)
             {
-                if (i == 10) logger.Stop();
                 logger.Write("Number with Flush: " + i);
+                if (i == 10) logger.Stop();
             }
 
             ILog logger2 = new AsyncLog(LoggerType.WithoutFlush);
 
             for (int i = 50; i > 0; i--)
             {
-                if (i == 40) logger2.Stop();
                 logger2.Write("Number with No flush: " + i);
+                if (i == 40) logger2.Stop();
             }
 
             Console.WriteLine("Main program done");
