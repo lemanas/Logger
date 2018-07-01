@@ -1,5 +1,6 @@
 ﻿using System;
 using LogTest;
+using LogTest.Interfaces;
 
 namespace LogUsers
 {
@@ -7,20 +8,18 @@ namespace LogUsers
     {
         static void Main()
         {
-            ILog  logger = new AsyncLog(LoggerType.WithFlush);
+            ILog  logger = new AsyncLog(nameof(logger));
 
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < 100; i++)
             {
-                logger.Write("Number with Flush: " + i);
-                if (i == 10) logger.Stop();
+                logger.AddLogToQueue("Number with Flush: " + i);
             }
 
-            ILog logger2 = new AsyncLog(LoggerType.WithoutFlush);
+            ILog logger2 = new AsyncLog(nameof(logger2));
 
             for (int i = 50; i > 0; i--)
             {
-                logger2.Write("Number with No flush: " + i);
-                if (i == 40) logger2.Stop();
+                logger2.AddLogToQueue("Number with No flush: " + i);
             }
 
             Console.WriteLine("Main program done");
