@@ -10,7 +10,7 @@ namespace LogUsers
         {
             ILog  logger = new AsyncLog(nameof(logger));
 
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i <= 14; i++)
             {
                 logger.AddLogToQueue("Number with Flush: " + i);
             }

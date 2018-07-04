@@ -20,7 +20,7 @@ namespace LogTest.Tests
             {
                 for (int i = 0; i < 10; i++)
                 {
-                    testLogger.Write("Test log no: " + i);
+                    testLogger.AddLogToQueue("Test log no: " + i);
                     if (i == 5)
                         throw new Exception();
                 }
@@ -30,17 +30,25 @@ namespace LogTest.Tests
                 // ignored
             }
 
-            var firstLineCount = File.ReadAllLines(file).Length;
+            testLogger.StopWithFlush();
+
+            ILog testLogger2 = new AsyncLog(nameof(testLogger2));
+            string file2 = @"C:\LogTest\" + nameof(testLogger2) + date + ".txt";
 
             for (int i = 0; i < 10; i++)
             {
-                testLogger.Write("Test log after exception no: " + i);
+                testLogger2.AddLogToQueue("Test log after exception no: " + i);
             }
 
-            var finalLineCount = File.ReadAllLines(file).Length;
+            testLogger2.StopWithFlush();
+
+            Assert.IsTrue(File.Exists(file));
+            Assert.IsTrue(File.Exists(file2));
+
+            Thread.Sleep(1000);
 
             File.Delete(file);
-            Assert.IsTrue(finalLineCount > firstLineCount); 
+            File.Delete(file2);
         }
 
         [TestMethod]
@@ -50,13 +58,16 @@ namespace LogTest.Tests
             ILog logDateTester = new AsyncLog(nameof(logDateTester));
             string path = @"C:\LogTest\" + nameof(logDateTester) + date + ".txt";
 
-            logDateTester.Write("The one and only log in this file"); // file created on first log
-            var fileName = File.OpenRead(path).Name;
-            var fileDate = fileName.Substring(24, 8);
+            logDateTester.AddLogToQueue("Some random test log"); // file created on first log
+            logDateTester.StopWithFlush();
 
+            Thread.Sleep(1);
+
+            var file = File.OpenRead(path);
+            file.Dispose();
+            var fileDate = file.Name.Substring(24, 8);
 
             File.Delete(path);
-            Assert.IsNotNull(fileName);
             Assert.IsTrue(fileDate == date);
         }
 
@@ -68,7 +79,6 @@ namespace LogTest.Tests
             // First logger
             ILog firstFlushLog = new AsyncLog(nameof(firstFlushLog));
             string pathFirst = @"C:\LogTest\" + nameof(firstFlushLog) + date + ".txt";
-            File.Delete(pathFirst);
 
             for (int i = 0; i < 15; i++)
             {
@@ -76,7 +86,7 @@ namespace LogTest.Tests
                 if (i == 10) firstFlushLog.StopWithFlush();
             }
 
-            Thread.Sleep(2000);
+            Thread.Sleep(1);
             var firstLineCount = File.ReadAllLines(pathFirst).Length;
 
             // Second logger
@@ -89,11 +99,9 @@ namespace LogTest.Tests
                 secondFlushLog.AddLogToQueue("Number with Flush: " + i);
             }
 
-            Thread.Sleep(2000);
+            Thread.Sleep(1);
             var secondLineCount = File.ReadAllLines(pathSecond).Length;
 
-
-            Thread.Sleep(2000);
             File.Delete(pathFirst);
             File.Delete(pathSecond);
             Assert.IsTrue(firstLineCount > secondLineCount);
@@ -105,6 +113,20 @@ namespace LogTest.Tests
             var date = DateTime.Today.ToString("yyyyMMdd");
             ILog noFlushLog = new AsyncLog(nameof(noFlushLog));
             string path = @"C:\LogTest\" + nameof(noFlushLog) + date + ".txt";
+
+            for (int i = 0; i < 15; i++)
+            {
+                noFlushLog.AddLogToQueue("Number with Flush: " + i);
+            }
+
+            noFlushLog.StopWithoutFlush();
+            noFlushLog.StopWithFlush();
+
+            Thread.Sleep(1000);
+
+            Assert.IsTrue(File.Exists(path));
+            Assert.IsTrue(File.OpenRead(path).Length == 0);
+
             File.Delete(path);
         }
 
