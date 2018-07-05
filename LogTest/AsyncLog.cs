@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using LogTest.Interfaces;
+using LogComponent.Interfaces;
 
-namespace LogTest
+namespace LogComponent
 {
     public class AsyncLog : ILog
     {
@@ -15,12 +14,12 @@ namespace LogTest
         private readonly CancellationToken _token;
         private readonly BlockingCollection<string> _logCollection;
 
-        public AsyncLog(string name)
+        public AsyncLog(string name, string location)
         {
-            if (!Directory.Exists(@"C:\LogTest"))
-                Directory.CreateDirectory(@"C:\LogTest");
+            if (!Directory.Exists(location))
+                Directory.CreateDirectory(location);
 
-            _path = @"C:\LogTest\" + name;
+            _path = location + name;
             _ctx = new CancellationTokenSource();
             _token = _ctx.Token;
             _logCollection = new BlockingCollection<string>();
@@ -34,21 +33,29 @@ namespace LogTest
 
         public void StopWithoutFlush()
         {
+            _logCollection.CompleteAdding();
             _ctx.Cancel();
         }
 
-        public void AddLogToQueue(string text)
+        public async Task AddLogToQueue(string text)
         {
-            if (!_ctx.IsCancellationRequested)
+            try
             {
-                try
+                await Task.Factory.StartNew(() =>
                 {
-                    _logCollection.Add(text, _token);
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine("Cancelled...");
-                }
+                    try
+                    {
+                        _logCollection.Add(text, _token);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Cancelled...");
+                    }
+                }, _token);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Cancelled...");
             }
         }
 
@@ -56,8 +63,8 @@ namespace LogTest
         {
             string file = _path + DateTime.Today.ToString("yyyyMMdd") + ".txt";
             string errorsFile = _path + "errorLog.txt";
+            IWriter writer = new AsyncWriter();
 
-            byte[] newLine = Encoding.Unicode.GetBytes(Environment.NewLine);
             try
             {
                 using (var sourceStream = new FileStream(file,
@@ -65,17 +72,18 @@ namespace LogTest
                 {
                     foreach (var log in _logCollection.GetConsumingEnumerable())
                     {
-                        byte[] encodedText = Encoding.Unicode.GetBytes(log);
-
-                        sourceStream.WriteAsync(encodedText, 0, encodedText.Length, _token);
-                        sourceStream.WriteAsync(newLine, 0, newLine.Length, _token);
+                        if (!_ctx.IsCancellationRequested)
+                            writer.Write(sourceStream, log, _token);
                     }
                 }
             }
             catch (Exception exception)
             {
-                File.AppendAllText(errorsFile, DateTime.Now + " || " + exception.Message);
-                File.AppendAllText(errorsFile, newLine.ToString());
+                using (var sourceStream = new FileStream(errorsFile,
+                    FileMode.Append, FileAccess.Write, FileShare.Write, 4096, true))
+                {
+                    writer.Write(sourceStream, exception.Message, _token);
+                }
             }
         }
     }

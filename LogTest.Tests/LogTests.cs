@@ -1,7 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Threading;
-using LogTest.Interfaces;
+using LogComponent;
+using LogComponent.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogTest.Tests
@@ -9,12 +10,13 @@ namespace LogTest.Tests
     [TestClass]
     public class LogTests
     {
+        private static readonly string Location = @"C:\LogTest\";   
+
         [TestMethod]
         public void TestOnException()
         {
-            var date = DateTime.Today.ToString("yyyyMMdd");
-            ILog testLogger = new AsyncLog(nameof(testLogger));
-            string file = @"C:\LogTest\" + nameof(testLogger) + date + ".txt";
+            ILog testLogger = new AsyncLog(nameof(testLogger), Location);
+            string file = TestUtils.BuildFilePath(Location, nameof(testLogger));
 
             try
             {
@@ -32,8 +34,8 @@ namespace LogTest.Tests
 
             testLogger.StopWithFlush();
 
-            ILog testLogger2 = new AsyncLog(nameof(testLogger2));
-            string file2 = @"C:\LogTest\" + nameof(testLogger2) + date + ".txt";
+            ILog testLogger2 = new AsyncLog(nameof(testLogger2), Location);
+            string file2 = TestUtils.BuildFilePath(Location, nameof(testLogger2));
 
             for (int i = 0; i < 10; i++)
             {
@@ -41,6 +43,8 @@ namespace LogTest.Tests
             }
 
             testLogger2.StopWithFlush();
+
+            Thread.Sleep(100);
 
             Assert.IsTrue(File.Exists(file));
             Assert.IsTrue(File.Exists(file2));
@@ -55,8 +59,9 @@ namespace LogTest.Tests
         public void TestFileDate()
         {
             var date = DateTime.Today.ToString("yyyyMMdd");
-            ILog logDateTester = new AsyncLog(nameof(logDateTester));
-            string path = @"C:\LogTest\" + nameof(logDateTester) + date + ".txt";
+
+            ILog logDateTester = new AsyncLog(nameof(logDateTester), Location);
+            string path = TestUtils.BuildFilePath(Location, nameof(logDateTester));
 
             logDateTester.AddLogToQueue("Some random test log"); // file created on first log
             logDateTester.StopWithFlush();
@@ -74,11 +79,9 @@ namespace LogTest.Tests
         [TestMethod]
         public void TestStopWithFlush()
         {
-            var date = DateTime.Today.ToString("yyyyMMdd");
-
             // First logger
-            ILog firstFlushLog = new AsyncLog(nameof(firstFlushLog));
-            string pathFirst = @"C:\LogTest\" + nameof(firstFlushLog) + date + ".txt";
+            ILog firstFlushLog = new AsyncLog(nameof(firstFlushLog), Location);
+            string pathFirst = TestUtils.BuildFilePath(Location, nameof(firstFlushLog));
 
             for (int i = 0; i < 15; i++)
             {
@@ -86,12 +89,15 @@ namespace LogTest.Tests
                 if (i == 10) firstFlushLog.StopWithFlush();
             }
 
-            Thread.Sleep(1);
-            var firstLineCount = File.ReadAllLines(pathFirst).Length;
+            Thread.Sleep(100);
+
+            var firstFile = File.OpenRead(pathFirst);
+            var firstFileLength = firstFile.Length;
+            firstFile.Dispose();
 
             // Second logger
-            ILog secondFlushLog = new AsyncLog(nameof(secondFlushLog));
-            string pathSecond = @"C:\LogTest\" + nameof(secondFlushLog) + date + ".txt";
+            ILog secondFlushLog = new AsyncLog(nameof(secondFlushLog), Location);
+            string pathSecond = TestUtils.BuildFilePath(Location, nameof(secondFlushLog));
 
             for (int i = 0; i < 15; i++)
             {
@@ -99,20 +105,22 @@ namespace LogTest.Tests
                 secondFlushLog.AddLogToQueue("Number with Flush: " + i);
             }
 
-            Thread.Sleep(1);
-            var secondLineCount = File.ReadAllLines(pathSecond).Length;
+            Thread.Sleep(100);
+
+            var secondFile = File.OpenRead(pathSecond);
+            var secondFileLength = secondFile.Length;
+            secondFile.Dispose();
 
             File.Delete(pathFirst);
             File.Delete(pathSecond);
-            Assert.IsTrue(firstLineCount > secondLineCount);
+            Assert.IsTrue(firstFileLength > secondFileLength);
         }
 
         [TestMethod]
         public void TestWithoutFlush()
         {
-            var date = DateTime.Today.ToString("yyyyMMdd");
-            ILog noFlushLog = new AsyncLog(nameof(noFlushLog));
-            string path = @"C:\LogTest\" + nameof(noFlushLog) + date + ".txt";
+            ILog noFlushLog = new AsyncLog(nameof(noFlushLog), Location);
+            string path = TestUtils.BuildFilePath(Location, nameof(noFlushLog));
 
             for (int i = 0; i < 15; i++)
             {
@@ -120,13 +128,15 @@ namespace LogTest.Tests
             }
 
             noFlushLog.StopWithoutFlush();
-            noFlushLog.StopWithFlush();
 
-            Thread.Sleep(1000);
+            Thread.Sleep(100);
+
+            var file = File.OpenRead(path);
 
             Assert.IsTrue(File.Exists(path));
-            Assert.IsTrue(File.OpenRead(path).Length == 0);
+            Assert.IsTrue(file.Length == 0);
 
+            file.Dispose();
             File.Delete(path);
         }
 

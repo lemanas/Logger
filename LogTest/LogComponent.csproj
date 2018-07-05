@@ -7,8 +7,8 @@
     <ProjectGuid>{EE0CC7D7-A1A0-4A16-80E5-8B80B480EB47}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LogTest</RootNamespace>
-    <AssemblyName>LogTest</AssemblyName>
+    <RootNamespace>LogComponent</RootNamespace>
+    <AssemblyName>LogComponent</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -43,7 +43,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncLog.cs" />
+    <Compile Include="AsyncWriter.cs" />
     <Compile Include="Interfaces\ILog.cs" />
+    <Compile Include="Interfaces\IWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

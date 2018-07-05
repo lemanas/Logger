@@ -1,4 +1,6 @@
-﻿namespace LogTest.Interfaces
+﻿using System.Threading.Tasks;
+
+namespace LogComponent.Interfaces
 {
     public interface ILog
     {
@@ -16,6 +18,6 @@
         /// Write a message to the Log.
         /// </summary>
         /// <param name="text">The text to written to the log</param>
-        void AddLogToQueue(string text);
+        Task AddLogToQueue(string text);
     }
 }
